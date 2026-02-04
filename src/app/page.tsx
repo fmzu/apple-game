@@ -11,30 +11,30 @@ const APPLE_SIZE = 28;
 
 const FALL_SPEED = 2.2; // px per frame (~60fps)
 const MOVE_SPEED = 4.6; // px per frame
-const SCORE_PER_APPLE = 5;
-const GOLDEN_START_SCORE = 20;
+const BLUE_SCORE = 5;
+const RED_SCORE = 10;
 const GOLDEN_SCORE = 15;
+const RED_START_SCORE = 20;
+const GOLD_START_SCORE = 100;
+const RED_CHANCE_20_99 = 0.4;
+const RED_CHANCE_100 = 0.3;
+const GOLD_CHANCE_100 = 0.1;
 
+type AppleType = "blue" | "red" | "gold";
 type AppleState = {
   x: number;
   y: number;
+  type: AppleType;
 };
-
-function randomApple(currentScore: number): AppleState {
-  return {
-    x: Math.random() * (W - APPLE_SIZE),
-    y: 0,
-  };
-}
 
 export default function Page() {
   const [score, setScore] = useState(0);
   const [apple, setApple] = useState<AppleState>({
     x: 0,
     y: -APPLE_SIZE,
+    type: "blue",
   });
   const appleY = Math.min(apple.y, H - APPLE_SIZE);
-  const isGoldenNow = score >= GOLDEN_START_SCORE;
   const [playerX, setPlayerX] = useState((W - PLAYER_W) / 2);
   const [ready, setReady] = useState(false);
 
@@ -42,13 +42,31 @@ export default function Page() {
   const scoreRef = useRef(score);
   const runningRef = useRef(false);
   const rafRef = useRef(0);
+  const spawnRef = useRef(0);
   const keys = useRef<{ left: boolean; right: boolean }>({
     left: false,
     right: false,
   });
 
+  const spawnApple = (currentScore: number): AppleState => {
+    spawnRef.current += 1;
+    let type: AppleType = "blue";
+    if (currentScore >= GOLD_START_SCORE) {
+      const r = Math.random();
+      if (r < GOLD_CHANCE_100) type = "gold";
+      else if (r < GOLD_CHANCE_100 + RED_CHANCE_100) type = "red";
+    } else if (currentScore >= RED_START_SCORE) {
+      if (Math.random() < RED_CHANCE_20_99) type = "red";
+    }
+    return {
+      x: Math.random() * (W - APPLE_SIZE),
+      y: 0,
+      type,
+    };
+  };
+
   useEffect(() => {
-    setApple(randomApple(scoreRef.current));
+    setApple(spawnApple(scoreRef.current));
     setReady(true);
   }, []);
 
@@ -101,22 +119,18 @@ export default function Page() {
 
         if (hit) {
           const points =
-            scoreRef.current >= GOLDEN_START_SCORE
-              ? GOLDEN_SCORE
-              : SCORE_PER_APPLE;
-          setScore((s) => {
-            const next = s + points;
-            scoreRef.current = next;
-            return next;
-          });
-          return randomApple(scoreRef.current);
+            a.type === "gold" ? GOLDEN_SCORE : a.type === "red" ? RED_SCORE : BLUE_SCORE;
+          const nextScore = scoreRef.current + points;
+          scoreRef.current = nextScore;
+          setScore(nextScore);
+          return spawnApple(nextScore);
         }
 
         if (nextY + APPLE_SIZE >= H) {
-          return randomApple(scoreRef.current);
+          return spawnApple(scoreRef.current);
         }
 
-        return { x: nextX, y: nextY };
+        return { ...a, x: nextX, y: nextY };
       });
 
       rafRef.current = requestAnimationFrame(tick);
@@ -151,9 +165,11 @@ export default function Page() {
             >
               <Apple
                 className={
-                  isGoldenNow
+                  apple.type === "gold"
                     ? "text-amber-400"
-                    : "text-red-500"
+                    : apple.type === "red"
+                    ? "text-red-500"
+                    : "text-emerald-500"
                 }
                 size={APPLE_SIZE}
                 strokeWidth={1}
@@ -172,7 +188,10 @@ export default function Page() {
 
         <div className="mt-3 text-xs text-slate-600">← / → で左右移動</div>
         <div className="mt-1 text-[11px] text-slate-500">
-          赤: {SCORE_PER_APPLE}点 / 金: {GOLDEN_SCORE}点（{GOLDEN_START_SCORE}点以上で出現）
+          緑: {BLUE_SCORE}点（~{RED_START_SCORE - 1}点） / 赤: {RED_SCORE}点（{RED_START_SCORE}点〜）
+        </div>
+        <div className="mt-1 text-[11px] text-slate-500">
+          {GOLD_START_SCORE}点〜は金も混在（赤{Math.round(RED_CHANCE_100 * 100)}%、金{Math.round(GOLD_CHANCE_100 * 100)}%、緑{Math.round((1 - RED_CHANCE_100 - GOLD_CHANCE_100) * 100)}%）
         </div>
       </div>
     </main>
