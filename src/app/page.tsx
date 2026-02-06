@@ -8,6 +8,7 @@ const H = 300
 const PLAYER_W = 56
 const PLAYER_H = 18
 const APPLE_SIZE = 28
+const PLAYER_BOTTOM_OFFSET = 8
 
 const FALL_SPEED = 2.2 // px per frame (~60fps)
 const MOVE_SPEED = 4.6 // px per frame
@@ -121,9 +122,6 @@ export default function Page() {
 	useEffect(() => {
 		if (!ready) return
 		if (runningRef.current) return
-		const w = window as unknown as { __appleGameRunning?: boolean }
-		if (w.__appleGameRunning) return
-		w.__appleGameRunning = true
 		runningRef.current = true
 
 		const tick = () => {
@@ -144,7 +142,7 @@ export default function Page() {
 				const nextY = a.y + FALL_SPEED
 				const nextX = a.x
 				const px = playerXRef.current
-				const playerY = H - PLAYER_H - 8
+				const playerY = H - PLAYER_H - PLAYER_BOTTOM_OFFSET
 
 				const hit =
 					nextY + APPLE_SIZE >= playerY &&
@@ -185,7 +183,6 @@ export default function Page() {
 
 		rafRef.current = requestAnimationFrame(tick)
 		return () => {
-			w.__appleGameRunning = false
 			runningRef.current = false
 			cancelAnimationFrame(rafRef.current)
 		}
