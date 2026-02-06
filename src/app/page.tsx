@@ -10,8 +10,8 @@ const PLAYER_H = 18
 const APPLE_SIZE = 28
 const PLAYER_BOTTOM_OFFSET = 8
 
-const FALL_SPEED = 2.2 // px per frame (~60fps)
-const MOVE_SPEED = 4.6 // px per frame
+const FALL_SPEED = 2.2 // フレームあたりのピクセル数 (~60fps)
+const MOVE_SPEED = 4.6 // フレームあたりのピクセル数
 const BLUE_SCORE = 5
 const RED_SCORE = 10
 const GOLDEN_SCORE = 15
